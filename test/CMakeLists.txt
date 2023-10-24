@@ -7,6 +7,7 @@ target_include_directories(test_client
         ${SIMPLE_LOGGER_INCLUDE}
         ${NLOHMANN_JSON_INCLUDE}
         ${COMMON_INCLUDE}
+        ${LIBPQ_INCLUDE}
 )
 
 target_link_libraries(test_client PRIVATE Catch2::Catch2WithMain)
@@ -15,6 +16,7 @@ target_link_libraries(test_client PRIVATE
         simple_config
         common
         postgresql_handler
+        libpq
 )
 
 

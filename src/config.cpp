@@ -7,19 +7,24 @@ namespace postgresql::config {
 
     bool PostgresqlConfig::validate() {
         if (m_hostname.empty()) {
-            logger.error("Hostname is empty");
+            logger->send<simple_logger::LogLevel::ERROR>("Hostname is empty");
+            return false;
         }
-        if (common::ip::is_a_valid_port(m_port)) {
-            logger.error("Port is not valid");
+        if (!common::ip::is_a_valid_port(m_port)) {
+            logger->send<simple_logger::LogLevel::ERROR>("Port is not valid: " + std::to_string(m_port));
+            return false;
         }
         if (m_user.empty()) {
-            logger.error("User is empty");
+            logger->send<simple_logger::LogLevel::ERROR>("User is empty");
+            return false;
         }
         if (m_password.empty()) {
-            logger.error("Password is empty");
+            logger->send<simple_logger::LogLevel::ERROR>("Password is empty");
+            return false;
         }
         if (m_database.empty()) {
-            logger.error("Database is empty");
+            logger->send<simple_logger::LogLevel::ERROR>("Database is empty");
+            return false;
         }
 
         return true;
@@ -49,11 +54,11 @@ namespace postgresql::config {
 
     std::string PostgresqlConfig::to_string() const {
         return (std::string) "PostgresqlConfig{" +
-               "m_hostname=" + m_hostname +
-               ", m_port=" + std::to_string(m_port) +
-               ", m_user=" + m_user +
-               ", m_password=" + m_password +
-               ", m_database=" + m_database +
+               "hostname=" + m_hostname +
+               ", port=" + std::to_string(m_port) +
+               ", user=" + m_user +
+               ", password=" + m_password +
+               ", database=" + m_database +
                '}';
     }
 

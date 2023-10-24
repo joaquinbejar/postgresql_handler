@@ -27,17 +27,17 @@ namespace postgresql::config {
         [[nodiscard]] std::string to_string() const override;
 
     protected:
-        std::string m_database = common::get_env_variable_string("PG_DATABASE", "database");
-        std::string m_password = common::get_env_variable_string("PG_PASSWORD", "password");
-        std::string m_hostname = common::get_env_variable_string("PG_HOSTNAME", "localhost");
-        std::string m_user = common::get_env_variable_string("PG_USER", "user");
+        std::string m_database = common::get_env_variable_string("PG_DATABASE", "");
+        std::string m_password = common::get_env_variable_string("PG_PASSWORD", "");
+        std::string m_hostname = common::get_env_variable_string("PG_HOSTNAME", "");
+        std::string m_user = common::get_env_variable_string("PG_USER", "");
         int m_port = common::get_env_variable_int("PG_PORT", 5432);
 
     public:
         std::string uri =
                 "postgresql://" + m_user + ":" + m_password + "@" + m_hostname + ":" + std::to_string(m_port) + "/" +
                 m_database;
-        simple_logger::Logger logger = simple_logger::Logger(loglevel);
+        std::shared_ptr<simple_logger::Logger> logger = std::make_shared<simple_logger::Logger>(loglevel);
 
     };
 }
