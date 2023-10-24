@@ -26,12 +26,15 @@ namespace postgresql::config {
 
         [[nodiscard]] std::string to_string() const override;
 
+        bool multi_insert = common::get_env_variable_bool("PG_MULTI_INSERT", false);
+
     protected:
         std::string m_database = common::get_env_variable_string("PG_DATABASE", "");
         std::string m_password = common::get_env_variable_string("PG_PASSWORD", "");
         std::string m_hostname = common::get_env_variable_string("PG_HOSTNAME", "");
         std::string m_user = common::get_env_variable_string("PG_USER", "");
         int m_port = common::get_env_variable_int("PG_PORT", 5432);
+
 
     public:
         std::string uri =

@@ -6,7 +6,22 @@
 
 namespace postgresql::client {
 
-    PostgresManager::PostgresManager(postgresql::config::PostgresqlConfig &config) : m_config(config) {
+    bool is_insert_or_replace_query_correct(const std::string &query) {
+
+        std::regex queryRegex(
+                R"(^\s*(INSERT|REPLACE)\s+INTO\s+[a-zA-Z_][a-zA-Z_0-9]*\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)\s*;?\s*$)",
+                std::regex_constants::icase
+        );
+
+        return std::regex_match(query, queryRegex);
+    }
+
+
+    PostgresManager::PostgresManager(postgresql::config::PostgresqlConfig &config) : m_config(config),
+                                                                                     m_queue_thread_is_running(true),
+                                                                                     m_queue_thread(
+                                                                                             &PostgresManager::run,
+                                                                                             this) {
         conn = PQconnectdb(config.uri.c_str());
         if (PQstatus(conn) != CONNECTION_OK) {
             m_logger->send<simple_logger::LogLevel::ERROR>(
@@ -18,6 +33,10 @@ namespace postgresql::client {
 
     PostgresManager::~PostgresManager() {
         PQfinish(conn);
+        m_queue_thread_is_running = false;
+        if (m_queue_thread.joinable()) {
+            m_queue_thread.join();
+        }
     }
 
     bool PostgresManager::insert(const std::string &query) {
@@ -78,6 +97,59 @@ namespace postgresql::client {
         }
         PQclear(res);
         return result;
+    }
+
+    bool PostgresManager::enqueue(const std::string &query) {
+        if (is_insert_or_replace_query_correct(query)) {
+            return m_queries.enqueue(query);
+        }
+        return false;
+    }
+
+
+    size_t PostgresManager::queue_size() {
+        return m_queries.size();
+    }
+
+
+    std::string PostgresManager::dequeue() {
+        std::string query = "";
+        if (m_queries.dequeue(query)) { // blocking
+            return query;
+        } else {
+            return this->dequeue();
+        }
+    }
+
+    void PostgresManager::stop() {
+        m_queue_thread_is_running = false;
+    }
+
+    void PostgresManager::run() {
+        while (m_queue_thread_is_running) {
+            // sleep this thread 10 seg
+//                std::this_thread::sleep_for(std::chrono::seconds(10));
+            if (m_multi_insert){
+                std::vector<std::string> queries;
+                while (m_queries.size() > 0) {
+                    queries.push_back(dequeue());
+                }
+                if (!queries.empty()) {
+                    if (!insert_multi(queries)) { // if insert fails, try individual insert
+                        for (auto &query : queries) {
+                            if (!insert(query)) // if insert fails, enqueue again
+                                enqueue(query);
+                        }
+                    }
+                }
+            } else {
+                std::string query = dequeue();
+                if (!query.empty()) {
+                    if (!insert(query)) // if insert fails, enqueue again
+                        enqueue(query);
+                }
+            }
+        }
     }
 
 

@@ -11,7 +11,10 @@ message(STATUS "POSTGRESQL_HANDLER_INCLUDE ${POSTGRESQL_HANDLER_INCLUDE}")
 include(cmake/common.cmake)
 include(cmake/simple_config.cmake)
 include(cmake/simple_logger.cmake)
-include(cmake/libpq.cmake)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/FindLibPQ.cmake")
+find_package(LibPQ REQUIRED)
+
 
 add_library(postgresql_handler STATIC
         src/client.cpp
@@ -28,13 +31,16 @@ target_include_directories(postgresql_handler PRIVATE
         ${NLOHMANN_JSON_INCLUDE}
         ${COMMON_INCLUDE}
         ${LIBPQ_INCLUDE}
+        ${POSTGRES_INCLUDE}
 )
 target_link_libraries(postgresql_handler PUBLIC
         simple_config
         simple_logger
         common
-        libpq
 )
+if(LibPQ_FOUND)
+    target_link_libraries(postgresql_handler PUBLIC LibPQ::PQ)
+endif()
 
 install(TARGETS postgresql_handler DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)
