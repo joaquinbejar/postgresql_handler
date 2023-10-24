@@ -59,6 +59,8 @@ namespace postgresql::config {
                ", user=" + m_user +
                ", password=" + m_password +
                ", database=" + m_database +
+               ", multi_insert=" + std::to_string(multi_insert) +
+               ", uri=" + uri +
                '}';
     }
 

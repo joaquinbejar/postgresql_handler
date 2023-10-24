@@ -25,10 +25,6 @@ namespace postgresql::client {
 
         ~PostgresManager();
 
-        bool insert(const std::string &query);
-
-        bool insert_multi(const std::vector<std::string> &queries);
-
         std::vector<std::map<std::string, std::string>> select(const std::string &query);
 
         bool enqueue(const std::string &query);
@@ -42,8 +38,15 @@ namespace postgresql::client {
         void run();
 
     private:
-        PGconn *conn;
-        std::mutex db_mutex;
+        void get_connection(std::shared_ptr<PGconn> &conn);
+        bool m_insert(const std::string &query);
+        bool insert_multi(const std::vector<std::string> &queries);
+
+        std::shared_ptr<PGconn> m_conn_insert;
+        std::shared_ptr<PGconn> m_conn_select;
+        std::mutex m_select_mutex;
+        std::mutex m_insert_mutex;
+
         postgresql::config::PostgresqlConfig &m_config;
         std::shared_ptr<simple_logger::Logger> m_logger = m_config.logger;
         common::ThreadQueue<std::string> m_queries;
