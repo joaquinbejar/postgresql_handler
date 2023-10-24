@@ -7,13 +7,7 @@
 namespace postgresql::client {
 
     bool is_insert_or_replace_query_correct(const std::string &query) {
-
-        std::regex queryRegex(
-                R"(^\s*(INSERT|REPLACE)\s+INTO\s+[a-zA-Z_][a-zA-Z_0-9]*\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)\s*;?\s*$)",
-                std::regex_constants::icase
-        );
-
-        return std::regex_match(query, queryRegex);
+        return std::regex_match(query, QUERYREGEX);
     }
 
     PostgresManager::PostgresManager(postgresql::config::PostgresqlConfig &config) : m_config(config),
@@ -40,6 +34,7 @@ namespace postgresql::client {
     }
 
     bool PostgresManager::m_insert(const std::string &query) {
+//        m_logger->send<simple_logger::LogLevel::DEBUG>("SINGLE: " + query);
 
         std::lock_guard<std::mutex> lock(m_insert_mutex);
         PGresult *res = PQexec(m_conn_insert.get(), query.c_str());
@@ -55,7 +50,8 @@ namespace postgresql::client {
         return true;
     }
 
-    bool PostgresManager::insert_multi(const std::vector<std::string> &queries) {
+    bool PostgresManager::m_insert_multi(const std::vector<std::string> &queries) {
+//        m_logger->send<simple_logger::LogLevel::DEBUG>("MULTI: " + queries.at(0));
         std::stringstream multi_query;
 
         multi_query << "BEGIN;";
@@ -114,7 +110,7 @@ namespace postgresql::client {
         return m_queries.size();
     }
 
-    std::string PostgresManager::dequeue() {
+    std::string PostgresManager::m_dequeue() {
         std::string query;
         if (m_queries.dequeue_blocking(query)) { // false if queue is empty or retry limit is reached
             return query;
@@ -144,10 +140,10 @@ namespace postgresql::client {
             if (m_multi_insert) {
                 std::vector<std::string> queries;
                 while (m_queries.size() > 0) {
-                    queries.push_back(dequeue());
+                    queries.push_back(m_dequeue());
                 }
                 if (!queries.empty()) {
-                    if (!insert_multi(queries)) { // if insert fails, try individual m_insert
+                    if (!m_insert_multi(queries)) { // if insert fails, try individual m_insert
                         for (auto &query: queries) {
                             if (!m_insert(query)) // if m_insert fails, enqueue again
                                 enqueue(query);
@@ -155,14 +151,14 @@ namespace postgresql::client {
                     }
                 }
             } else {
-                std::string query = dequeue();
+                std::string query = m_dequeue();
                 if (!query.empty()) {
                     if (!m_insert(query)) // if m_insert fails, enqueue again
                         enqueue(query);
                 }
             }
         }
-        m_logger->send<simple_logger::LogLevel::DEBUG>("Queue thread stopped");
+//        m_logger->send<simple_logger::LogLevel::DEBUG>("Queue thread stopped");
     }
 
 

@@ -5,7 +5,6 @@
 #ifndef POSTGRESQL_HANDLER_CLIENT_H
 #define POSTGRESQL_HANDLER_CLIENT_H
 
-
 #include <mutex>
 #include <simple_color/color.h>
 #include <simple_config/config.h>
@@ -17,7 +16,12 @@
 
 namespace postgresql::client {
 
-    bool is_insert_or_replace_query_correct(const std::string& query);
+    [[maybe_unused]] const std::regex QUERYREGEX(
+            R"(^\s*(INSERT|REPLACE)\s+INTO\s+[a-zA-Z_][a-zA-Z_0-9]*\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)\s*;?\s*$)",
+            std::regex_constants::icase
+    );
+
+    bool is_insert_or_replace_query_correct(const std::string &query);
 
     class PostgresManager {
     public:
@@ -31,16 +35,18 @@ namespace postgresql::client {
 
         size_t queue_size();
 
-        std::string dequeue();
-
         void stop();
 
         void run();
 
     private:
         void get_connection(std::shared_ptr<PGconn> &conn);
+
         bool m_insert(const std::string &query);
-        bool insert_multi(const std::vector<std::string> &queries);
+
+        bool m_insert_multi(const std::vector<std::string> &queries);
+
+        std::string m_dequeue();
 
         std::shared_ptr<PGconn> m_conn_insert;
         std::shared_ptr<PGconn> m_conn_select;
