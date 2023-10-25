@@ -16,10 +16,12 @@
 
 namespace postgresql::client {
 
-    [[maybe_unused]] const std::regex QUERYREGEX(
-            R"(^\s*(INSERT|REPLACE)\s+INTO\s+[a-zA-Z_][a-zA-Z_0-9]*\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)\s*;?\s*$)",
+
+    const std::regex QUERYREGEX(
+            R"(^\s*INSERT\s+INTO\s+[a-zA-Z_][a-zA-Z_0-9]*\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)\s*(ON\s+CONFLICT\s*\(([^)]+)\)\s*DO\s+UPDATE\s+SET\s*([^;]+))?\s*;?\s*$)",
             std::regex_constants::icase
     );
+
 
     bool is_insert_or_replace_query_correct(const std::string &query);
 

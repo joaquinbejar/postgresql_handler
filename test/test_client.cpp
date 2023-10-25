@@ -105,3 +105,63 @@ TEST_CASE("Testing ThreadQueue multi-insert with fails functionality", "[queue]"
         REQUIRE(result.size() == 100);
     }
 }
+
+TEST_CASE("Testing ThreadQueue select types functionality", "[queue]") {
+    setenv("PG_MULTI_INSERT", "true", 1);
+    setenv("LOGLEVEL", "debug", 1);
+    postgresql::config::PostgresqlConfig config;
+//    config.logger->send<simple_logger::LogLevel::INFORMATIONAL>(config.to_string());
+    PostgresManager dbManager(config);
+
+    SECTION("Testing enqueue multi queries method") {
+        auto id = common::key_generator();
+            for (int j = 0; j < 100; ++j) {
+                REQUIRE(dbManager.enqueue(
+                        "INSERT INTO table_name2 (name , dates, number, f) VALUES ('" + id + "', '2020-10-12'," +
+                        std::to_string(j) + ", 2.2);") == true);
+            }
+
+        REQUIRE(dbManager.queue_size() > 0);
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        auto result = dbManager.select("SELECT * FROM table_name2 where name = '" + id + "';");
+        REQUIRE(!result.empty());  // Assume that the table is not empty
+        REQUIRE(result.size() == 100);
+        for (int i = 0; i < 100; ++i) {
+            REQUIRE(result[i]["name"] == id);
+            REQUIRE(result[i]["dates"] == "2020-10-12");
+            REQUIRE(result[i]["number"] == std::to_string(i));
+            REQUIRE(result[i]["f"] == "2.2");
+
+        }
+    }
+
+    SECTION("Testing updates ") {
+        auto id = common::key_generator();
+        for (int j = 0; j < 100; ++j) {
+            REQUIRE(dbManager.enqueue(
+                    "INSERT INTO table_name2 (name , dates, number, f) VALUES ('" + id + "', '2020-10-12'," +
+                    std::to_string(j) + ", 2.2);") == true);
+        }
+
+        for (int j = 0; j < 100; ++j) {
+            REQUIRE(dbManager.enqueue(
+                    "INSERT INTO table_name2 (name , dates, number, f) VALUES ('" + id + "', '2020-10-12'," +
+                    std::to_string(j) + ", 2.2) ON CONFLICT (name,number) DO UPDATE SET f = 3.3;") == true);
+        }
+
+        REQUIRE(dbManager.queue_size() > 0);
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        auto result = dbManager.select("SELECT * FROM table_name2 where name = '" + id + "';");
+        REQUIRE(!result.empty());  // Assume that the table is not empty
+        REQUIRE(result.size() == 100);
+        for (int i = 0; i < 100; ++i) {
+            REQUIRE(result[i]["name"] == id);
+            REQUIRE(result[i]["dates"] == "2020-10-12");
+            REQUIRE(result[i]["number"] == std::to_string(i));
+            REQUIRE(result[i]["f"] == "3.3");
+
+        }
+    }
+
+
+}
