@@ -53,6 +53,7 @@ namespace postgresql::client {
     bool PostgresManager::m_insert_multi(const std::vector<std::string> &queries) {
 //        m_logger->send<simple_logger::LogLevel::DEBUG>("MULTI: " + queries.at(0));
         std::stringstream multi_query;
+        bool success = true;
 
         multi_query << "BEGIN;";
         for (const auto &query: queries) {
@@ -66,11 +67,12 @@ namespace postgresql::client {
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             m_logger->send<simple_logger::LogLevel::ERROR>(
                     "Multi INSERT failed: " + std::string(PQerrorMessage(m_conn_insert.get())));
-            PQclear(res);
-            return false;
+            // Rollback the transaction
+            PQexec(m_conn_insert.get(), "ROLLBACK;");
+            success = false;
         }
         PQclear(res);
-        return true;
+        return success;
     }
 
     std::vector<std::map<std::string, std::string>> PostgresManager::select(const std::string &query) {
@@ -145,8 +147,10 @@ namespace postgresql::client {
                 if (!queries.empty()) {
                     if (!m_insert_multi(queries)) { // if insert fails, try individual m_insert
                         for (auto &query: queries) {
-                            if (!m_insert(query)) // if m_insert fails, enqueue again
-                                enqueue(query);
+                            if (!m_insert(query)) // if m_insert fails, log error and discard query
+                                m_logger->send<simple_logger::LogLevel::ERROR>(
+                                        "DISCARD QUERY: " + query);
+//                                enqueue(query);
                         }
                     }
                 }

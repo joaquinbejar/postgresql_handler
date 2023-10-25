@@ -77,3 +77,31 @@ TEST_CASE("Testing ThreadQueue single-insert functionality", "[queue]") {
         REQUIRE(result.size() == 100);
     }
 }
+
+TEST_CASE("Testing ThreadQueue multi-insert with fails functionality", "[queue]") {
+    setenv("PG_MULTI_INSERT", "true", 1);
+    setenv("LOGLEVEL", "debug", 1);
+    postgresql::config::PostgresqlConfig config;
+    config.logger->send<simple_logger::LogLevel::INFORMATIONAL>(config.to_string());
+    PostgresManager dbManager(config);
+    auto id = common::key_generator();
+
+
+    SECTION("Testing enqueue multi queries method") {
+        for (int i = 0; i < 10; ++i) {
+            for (int j = 0; j < 10; ++j) {
+                REQUIRE(dbManager.enqueue(
+                        "INSERT INTO table_name (column1, column2) VALUES ('value_for_" + id + "', 'value" +
+                        std::to_string(i) + "_"+std::to_string(j) +"');") == true);
+            }
+            REQUIRE(dbManager.enqueue( // This query wrong syntax should fail
+                    "INSERT INTO table_name (column1, column2) VALUES ('value_for_" + id + "', value" +
+                    std::to_string(i) + ");") == true);
+        }
+        REQUIRE(dbManager.queue_size() > 0);
+        std::this_thread::sleep_for(std::chrono::seconds(30));
+        auto result = dbManager.select("SELECT * FROM table_name where column1 = 'value_for_" + id + "';");
+        REQUIRE(!result.empty());  // Assume that the table is not empty
+        REQUIRE(result.size() == 100);
+    }
+}
