@@ -1,7 +1,7 @@
 include(FetchContent)
 FetchContent_Declare(simple_logger
         GIT_REPOSITORY https://github.com/joaquinbejar/simple_logger.git
-        GIT_TAG dev
+        GIT_TAG v0.1.7
         )
 FetchContent_MakeAvailable(simple_logger)
 message(STATUS "SIMPLE_LOGGER_SOURCE_DIR ${simple_logger_SOURCE_DIR}")

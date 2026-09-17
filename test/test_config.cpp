@@ -13,6 +13,8 @@ TEST_CASE("Declare PostgresqlConfig", "[PostgresqlConfig]") {
     unsetenv("PG_HOSTNAME");
     unsetenv("PG_PORT");
     unsetenv("PG_DATABASE");
+    unsetenv("PG_USER");
+    unsetenv("PG_PASSWORD");
     postgresql::config::PostgresqlConfig config;
     REQUIRE(config.uri == "postgresql://:@:5432/");
     REQUIRE_FALSE(config.validate());
@@ -22,6 +24,8 @@ TEST_CASE("Declare PostgresqlConfig with env variables", "[PostgresqlConfig]") {
     setenv("PG_HOSTNAME", "localhost", 1);
     setenv("PG_PORT", "5432", 1);
     setenv("PG_DATABASE", "database", 1);
+    unsetenv("PG_USER");
+    unsetenv("PG_PASSWORD");
     postgresql::config::PostgresqlConfig config;
     REQUIRE(config.uri == "postgresql://:@localhost:5432/database");
     REQUIRE_FALSE(config.validate());
