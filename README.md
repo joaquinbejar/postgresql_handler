@@ -49,8 +49,23 @@ You can also document commands to lint the code or run tests. These steps help t
 ## Authors and acknowledgment
 Show your appreciation to those who have contributed to the project.
 
+## Contribution and Contact
+
+### **Contact Information**
+- **Author**: Joaquín Béjar García
+- **Email**: jb@taunais.com
+- **Telegram**: [@joaquin_bejar](https://t.me/joaquin_bejar)
+- **Repository**: <https://github.com/joaquinbejar/postgresql_handler>
+
 ## License
 For open source projects, say how it is licensed.
 
 ## Project status
 If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+
+<!-- related-projects:start -->
+## Related projects
+
+No other repositories by the same author depend on this project, and it depends on none of them. See all repositories at <https://github.com/joaquinbejar?tab=repositories>.
+
+<!-- related-projects:end -->
